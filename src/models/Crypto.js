@@ -20,7 +20,7 @@ const cryptoSchema = new Schema({
   payment: {
     type: String,
     required: true,
-    enum: ["crypto-wallet", " credit-card", "debit-card", "paypal"],
+    enum: ["crypto-wallet", "credit-card", "debit-card", "paypal"],
   },
   buyCrypto: [
     {
