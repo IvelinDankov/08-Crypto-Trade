@@ -6,6 +6,4 @@ router.get("/", (req, res) => {
   res.render("home", { title: "Home Page - Crypto Web" });
 });
 
-
-
 export default router;
