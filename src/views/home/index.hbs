@@ -6,25 +6,13 @@
         </div>
 
         <div class="coin-list">
+                {{#each coins}}
             <div class="coin">
-                <img src="/static/images/bitcoin.png">
+                <img src="{{image}}">
                 <div>
-                    <h3>$31,166.71</h3>
-                    <p>Bitcoin</p>
+                    <h3>${{price}}</h3>
+                    <p>{{name}}</p>
                 </div>
             </div>
-            <div class="coin">
-                <img src="./static/images/ethereum.png">
-                <div>
-                    <h3>$2,338.55</h3>
-                    <p>Ethereum</p>
-                </div>
-            </div>
-            <div class="coin">
-                <img src="./static/images/dogecoin.png">
-                <div>
-                    <h3>$0.09478</h3>
-                    <p>Dogecoin</p>
-                </div>
-            </div>
+                {{/each}}
         </div>

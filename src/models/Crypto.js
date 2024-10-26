@@ -4,18 +4,22 @@ const cryptoSchema = new Schema({
   name: {
     type: String,
     required: true,
+    minLength: [2, "Name must to be minimum 2 characters long!"]
   },
   image: {
     type: String,
     required: true,
+    validate: [/^https?:\/\//, "Image must to start with http:// or https:// "]
   },
   price: {
     type: Number,
     required: true,
+    min: [0, "Price must to be positive number!"]
   },
   description: {
     type: String,
     required: true,
+    minLength: [10, "Description must be minimum 10 character long!"]
   },
   payment: {
     type: String,

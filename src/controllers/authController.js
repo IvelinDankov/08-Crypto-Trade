@@ -1,17 +1,18 @@
 import { Router } from "express";
 import authService from "../services/authService.js";
 import { getErrorMsg } from "../utils/errorUtil.js";
+import { isAuth, isGuest } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
 /* ######################
 REGISTER
 ######################### */
-router.get("/register", (req, res) => {
+router.get("/register", isGuest, (req, res) => {
   res.render("auth/register", { tittle: "Register Page - Crypto Web" });
 });
 
-router.post("/register", async (req, res) => {
+router.post("/register",  isGuest, async (req, res) => {
   const { username, email, password, rePass } = req.body;
 
   try {
@@ -34,10 +35,10 @@ router.post("/register", async (req, res) => {
 LOGIN
 ######################### */
 
-router.get("/login", (req, res) => {
+router.get("/login", isGuest, (req, res) => {
   res.render("auth/login", { title: "Login Page - Crypto Web" });
 });
-router.post("/login", async (req, res) => {
+router.post("/login", isGuest, async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -56,7 +57,7 @@ router.post("/login", async (req, res) => {
 LOGOUT
 ######################### */
 
-router.get("/logout", (req, res) => {
+router.get("/logout", isAuth, (req, res) => {
   res.clearCookie("auth");
   res.redirect("/");
 });

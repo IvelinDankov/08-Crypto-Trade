@@ -1,6 +1,7 @@
 import { Router } from "express";
 import cryptoService from "../services/cryptoService.js";
 import { getErrorMsg } from "../utils/errorUtil.js";
+import { isAuth } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
@@ -17,13 +18,12 @@ router.get("/catalog", async (req, res) => {
 /* ####################
 ######### CREATE #######
 ##################### */
-router.get("/create", (req, res) => {
-  const cryptoData = req.body;
-  const selectedData = getSelectDataFields(cryptoData);
-  res.render("crypto/create", { title: "Create Page", payment: selectedData });
+router.get("/create", isAuth, (req, res) => {
+  const selectedData = getSelectDataFields({});
+  res.render("crypto/create", { title: "Create Page", payments: selectedData });
 });
 
-router.post("/create", async (req, res) => {
+router.post("/create", isAuth, async (req, res) => {
   const cryptoData = req.body;
   const userId = req.user._id;
 
@@ -31,14 +31,34 @@ router.post("/create", async (req, res) => {
     await cryptoService.create(cryptoData, userId);
     res.redirect("/crypto/catalog");
   } catch (err) {
-    const error = getErrorMsg(err);
     const selectedData = getSelectDataFields(cryptoData);
+    const error = getErrorMsg(err);
     res.render("crypto/create", {
+      payments: selectedData,
       title: "Create Page",
       crypto: cryptoData,
-      payment: selectedData,
       error,
     });
+  }
+});
+/* ####################
+######### SEARCH #######
+##################### */
+
+router.get("/search", async (req, res) => {
+  const filter = req.query;
+
+  try {
+    const cryptos = await cryptoService.getAll(filter).lean();
+    const selectedData = getSelectDataFields(filter);
+    res.render("crypto/search", {
+      title: "Search",
+      cryptos,
+      payments: selectedData,
+      filter,
+    });
+  } catch (err) {
+    // TODO: ERR
   }
 });
 
@@ -70,9 +90,16 @@ router.get("/:cryptoId/details", async (req, res) => {
 ######### BUY #######
 ##################### */
 
-router.get("/:cryptoId/buy", async (req, res) => {
+router.get("/:cryptoId/buy", isAuth, async (req, res) => {
   const cryptoId = req.params.cryptoId;
   const userId = req.user._id;
+  const crypto = await cryptoService.getOne(cryptoId);
+
+  const isOwner = crypto.owner.toString() === userId;
+
+  if (isOwner) {
+    return res.redirect("/404");
+  }
 
   try {
     await cryptoService.buy(cryptoId, userId);
@@ -86,8 +113,15 @@ router.get("/:cryptoId/buy", async (req, res) => {
 ######### DELETE #######
 ##################### */
 
-router.get("/:cryptoId/delete", async (req, res) => {
+router.get("/:cryptoId/delete", isAuth, async (req, res) => {
   const cryptoId = req.params.cryptoId;
+  const userId = req.user._id;
+
+  const isOwner = await isCryptoOwner(cryptoId, userId);
+
+  if (!isOwner) {
+    return res.redirect("/404");
+  }
 
   await cryptoService.remove(cryptoId);
 
@@ -98,53 +132,81 @@ router.get("/:cryptoId/delete", async (req, res) => {
 ######### EDIT #######
 ##################### */
 
-router.get("/:cryptoId/edit", async (req, res) => {
+router.get("/:cryptoId/edit", isAuth, async (req, res) => {
   const cryptoId = req.params.cryptoId;
+  const userId = req.params._id;
+
+  const isOwner = await isCryptoOwner(cryptoId, userId);
+
+  if (!isOwner) {
+    res.redirect("/404");
+  }
 
   try {
     const crypto = await cryptoService.getOne(cryptoId).lean();
 
-    const selectedData = getSelectDataFields(crypto);
+    const selectedData = getSelectDataFields({});
 
     res.render("crypto/edit", {
       title: "Edit Page",
       crypto,
-      payment: selectedData,
+      payments: selectedData,
     });
   } catch (err) {
-    // TODO: Edit
-    console.log(err);
+    const error = getErrorMsg(err);
+    res.render("crypto/edit", {
+      title: "Edit Page",
+      crypto,
+      payments: selectedData,
+      error,
+    });
   }
 });
 
-router.post("/:cryptoId/edit", async (req, res) => {
+router.post("/:cryptoId/edit", isAuth, async (req, res) => {
   const cryptoId = req.params.cryptoId;
   const cryptoData = req.body;
 
   try {
-    const crypto = await cryptoService.edit(cryptoId, cryptoData);
+    await cryptoService.edit(cryptoId, cryptoData);
 
     res.redirect(`/crypto/${cryptoId}/details`);
   } catch (err) {
-    // TODO: ERROR HANDLING
-    console.log(err);
+    const error = getErrorMsg(err);
+    const crypto = await cryptoService.getOne(cryptoId).lean();
+
+    const optionData = getSelectDataFields(cryptoData);
+
+    res.render("crypto/edit", {
+      title: "Edit Page",
+      error,
+      crypto,
+      payments: optionData,
+    });
   }
 });
 
 /* ####################
 ######### HELPERS #######
 ##################### */
-
-function getSelectDataFields({ cryptoData }) {
+function getSelectDataFields(cryptoData) {
   const cryptoValues = ["crypto-wallet", "credit-card", "debit-card", "paypal"];
 
   const cryptoOptionsView = cryptoValues.map((type) => ({
     value: type,
-    opt: type,
-    selected: cryptoData === type ? "selected" : "",
+    label: type,
+    selected: cryptoData.payment === type ? "selected" : "",
   }));
 
   return cryptoOptionsView;
+}
+
+async function isCryptoOwner(cryptoId, userId) {
+  const crypto = await cryptoService.getOne(cryptoId);
+
+  const isOwner = crypto.owner.toString() === userId;
+
+  return isOwner;
 }
 
 export default router;

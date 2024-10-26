@@ -1,7 +1,17 @@
 import Crypto from "../models/Crypto.js";
 
-const getAll = () => {
-  return Crypto.find();
+const getAll = (filter = {}) => {
+  const query = Crypto.find();
+
+  if (filter.nameSearch) {
+    query.find({ name: { $regex: filter.nameSearch, $options: "i" } });
+  }
+
+  if (filter.payment) {
+    query.find({ payment: filter.payment });
+  }
+
+  return query;
 };
 
 const create = (cryptoData, ownerId) => {
@@ -21,7 +31,7 @@ const remove = (id) => {
 };
 
 const edit = (id, data) => {
-  return Crypto.findByIdAndUpdate(id, data, {runValidators: true});
+  return Crypto.findByIdAndUpdate(id, data, { runValidators: true });
 };
 
 export default {

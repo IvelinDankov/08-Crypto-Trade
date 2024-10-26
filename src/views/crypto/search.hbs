@@ -1,0 +1,32 @@
+<section class="crypto-search">
+  <h1>Search</h1>
+
+  <form class="search-form" method="get">
+    <input
+      type="text"
+      class="search-coin"
+      name="nameSearch"
+      placeholder="Search here..."
+      value="{{filter.nameSearch}}"
+    />
+    <select id="payment" name="payment">
+      {{>options}}
+    </select>
+    <button type="submit" class="btn-search">Search</button>
+  </form>
+
+  <div class="search-result">
+    <div class="search-list">
+        {{#each cryptos}}
+        {{>crypto}}
+        {{else}}
+        <div class="no-match">
+                <p>No match was found!</p>
+            </div> 
+        {{/each}}
+    </div>
+
+  </div>
+
+
+</section>
